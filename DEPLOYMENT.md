@@ -9,7 +9,7 @@ This repository is Vercel-ready in two modes:
 
 Import the repository in Vercel and keep the root directory as the repository root.
 
-The repository pins Vercel's Python runtime to 3.12 with `.python-version`.
+The repository pins Vercel's Python runtime to 3.12 with `.python-version` and `pyproject.toml`.
 
 Vercel uses the root `vercel.json`:
 

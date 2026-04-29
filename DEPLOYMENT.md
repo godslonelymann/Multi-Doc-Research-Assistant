@@ -29,6 +29,7 @@ Optional production overrides:
 GROQ_MODEL=llama-3.3-70b-versatile
 GROQ_TEMPERATURE=0.2
 GROQ_TIMEOUT_SECONDS=60
+VECTOR_STORE_PROVIDER=sqlite
 EMBEDDING_PROVIDER=hashing
 EMBEDDING_MODEL=local-hashing-384
 MAX_UPLOAD_SIZE_MB=50
@@ -90,5 +91,5 @@ For a real production app, replace:
 
 - SQLite with hosted Postgres
 - local uploads with Vercel Blob, S3, or Cloudflare R2
-- local ChromaDB with hosted Chroma, Pinecone, Qdrant Cloud, or another managed vector database
+- local ChromaDB or the Vercel SQLite fallback with hosted Chroma, Pinecone, Qdrant Cloud, or another managed vector database
 - local `sentence-transformers` embeddings with hosted/API embeddings for best retrieval quality. The Vercel config defaults to a lightweight built-in hashing provider so the app can deploy with only `GROQ_API_KEY`.

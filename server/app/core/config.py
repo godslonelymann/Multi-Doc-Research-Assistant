@@ -13,6 +13,7 @@ class Settings(BaseSettings):
     groq_model: str = "llama-3.3-70b-versatile"
     groq_temperature: float = 0.2
     groq_timeout_seconds: float = 60.0
+    vector_store_provider: str = "chroma"
     chroma_persist_dir: str = "./chroma_db"
     chroma_collection_name: str = "research_documents"
     upload_dir: str = "./uploads"
@@ -46,6 +47,8 @@ class Settings(BaseSettings):
             self.chroma_persist_dir = "/tmp/chroma_db"
         if self.upload_dir == "./uploads":
             self.upload_dir = "/tmp/uploads"
+        if self.vector_store_provider == "chroma":
+            self.vector_store_provider = "sqlite"
         if self.app_env == "local":
             self.app_env = "production"
         if self.debug is True:

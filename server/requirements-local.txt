@@ -1,2 +1,4 @@
 -r requirements.txt
+chromadb==0.5.23
+posthog<4
 sentence-transformers==3.3.1

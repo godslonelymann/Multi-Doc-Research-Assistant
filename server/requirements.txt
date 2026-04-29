@@ -4,7 +4,5 @@ SQLAlchemy==2.0.36
 pydantic==2.10.4
 pydantic-settings==2.7.0
 python-multipart==0.0.20
-chromadb==0.5.23
-posthog<4
 PyMuPDF==1.25.1
 groq==0.13.1

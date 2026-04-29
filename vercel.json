@@ -1,0 +1,38 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "server/app.py",
+      "use": "@vercel/python"
+    },
+    {
+      "src": "client/package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "dist"
+      }
+    }
+  ],
+  "functions": {
+    "server/app.py": {
+      "excludeFiles": "{client/node_modules/**,client/dist/**,docs/**,server/tests/**,server/uploads/**,server/chroma_db/**,server/research_assistant.db,server/.venv/**,**/__pycache__/**,**/*.pyc}"
+    }
+  },
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "server/app.py"
+    },
+    {
+      "src": "/health",
+      "dest": "server/app.py"
+    },
+    {
+      "handle": "filesystem"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/client/dist/index.html"
+    }
+  ]
+}

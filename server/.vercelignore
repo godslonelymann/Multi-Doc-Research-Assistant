@@ -1,0 +1,9 @@
+.venv
+uploads
+chroma_db
+research_assistant.db
+tests/__pycache__
+**/__pycache__
+*.pyc
+.env
+.DS_Store

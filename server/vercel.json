@@ -1,0 +1,14 @@
+{
+  "version": 2,
+  "functions": {
+    "app.py": {
+      "excludeFiles": "{tests/**,uploads/**,chroma_db/**,research_assistant.db,.venv/**,**/__pycache__/**,**/*.pyc}"
+    }
+  },
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "app.py"
+    }
+  ]
+}

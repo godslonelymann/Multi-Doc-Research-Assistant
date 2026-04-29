@@ -1,0 +1,49 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  font-family:
+    -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", system-ui, sans-serif;
+  color-scheme: light;
+  background: #f5f5f7;
+  color: #1d1d1f;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  background: #f5f5f7;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+@layer components {
+  .surface {
+    @apply rounded-lg border border-[#d2d2d7] bg-white/95 shadow-[0_1px_2px_rgba(0,0,0,0.04)];
+  }
+
+  .soft-surface {
+    @apply rounded-lg border border-[#d2d2d7] bg-[#fbfbfd];
+  }
+
+  .primary-button {
+    @apply inline-flex min-h-10 items-center justify-center rounded-lg bg-[#0071e3] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#0077ed] focus:outline-none focus:ring-2 focus:ring-[#0071e3]/25 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .secondary-button {
+    @apply inline-flex min-h-10 items-center justify-center rounded-lg border border-[#d2d2d7] bg-white px-4 py-2 text-sm font-medium text-[#1d1d1f] transition hover:bg-[#f5f5f7] focus:outline-none focus:ring-2 focus:ring-[#0071e3]/20 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .quiet-button {
+    @apply inline-flex min-h-9 items-center justify-center rounded-lg px-3 py-1.5 text-sm font-medium text-[#6e6e73] transition hover:bg-[#f5f5f7] hover:text-[#1d1d1f] focus:outline-none focus:ring-2 focus:ring-[#0071e3]/15 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .field {
+    @apply w-full rounded-lg border border-[#d2d2d7] bg-white px-3 py-2.5 text-sm text-[#1d1d1f] outline-none transition placeholder:text-[#86868b] focus:border-[#0071e3] focus:ring-2 focus:ring-[#0071e3]/10;
+  }
+
+  .label {
+    @apply text-sm font-medium text-[#424245];
+  }
+}

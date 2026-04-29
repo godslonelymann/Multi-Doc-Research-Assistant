@@ -1,0 +1,10 @@
+client/node_modules
+client/dist
+server/.venv
+server/uploads
+server/chroma_db
+server/research_assistant.db
+server/tests/__pycache__
+**/__pycache__
+*.pyc
+.DS_Store

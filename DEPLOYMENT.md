@@ -9,6 +9,8 @@ This repository is Vercel-ready in two modes:
 
 Import the repository in Vercel and keep the root directory as the repository root.
 
+The repository pins Vercel's Python runtime to 3.12 with `.python-version`.
+
 Vercel uses the root `vercel.json`:
 
 - builds `client/` with Vite using `npm --prefix client ci && npm --prefix client run build`

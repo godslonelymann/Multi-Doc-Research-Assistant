@@ -31,6 +31,7 @@ from app.services.document_service import DocumentService
 from app.services.file_storage_service import FileStorageService
 from app.services.retrieval_service import RetrievalService
 from app.services.summary_service import SummaryService
+from app.vectorstore.chroma import ChromaVectorStore
 
 _ = (
     chat_message,
@@ -53,6 +54,20 @@ class FakeEmbeddings:
         if self.vectors is not None:
             return self.vectors
         return [[float(index + 1)] for index, _ in enumerate(texts)]
+
+
+class KeywordEmbeddings:
+    def embed_texts(self, texts):
+        vectors = []
+        for text in texts:
+            lowered = text.lower()
+            if "alpha" in lowered:
+                vectors.append([1.0, 0.0])
+            elif "beta" in lowered:
+                vectors.append([0.0, 1.0])
+            else:
+                vectors.append([0.0, 0.0])
+        return vectors
 
 
 class FakeVectorStore:
@@ -242,6 +257,59 @@ class BusinessLogicTestCase(unittest.IsolatedAsyncioTestCase):
         )
 
         self.assertEqual([chunk.vector_id for chunk in chunks], ["right"])
+
+    def test_database_vector_provider_queries_persisted_chunks(self):
+        workspace_a = self.create_workspace("A")
+        workspace_b = self.create_workspace("B")
+        alpha_doc = self.create_document(workspace_a.id, "alpha")
+        beta_doc = self.create_document(workspace_a.id, "beta")
+        other_workspace_doc = self.create_document(workspace_b.id, "other-alpha")
+        self.db.add_all(
+            [
+                DocumentChunk(
+                    document_id=alpha_doc.id,
+                    chunk_index=0,
+                    page_number=1,
+                    source_filename=alpha_doc.original_name,
+                    text_preview="alpha",
+                    content="alpha evidence",
+                    vector_id="alpha-vector",
+                ),
+                DocumentChunk(
+                    document_id=beta_doc.id,
+                    chunk_index=0,
+                    page_number=1,
+                    source_filename=beta_doc.original_name,
+                    text_preview="beta",
+                    content="beta evidence",
+                    vector_id="beta-vector",
+                ),
+                DocumentChunk(
+                    document_id=other_workspace_doc.id,
+                    chunk_index=0,
+                    page_number=1,
+                    source_filename=other_workspace_doc.original_name,
+                    text_preview="alpha",
+                    content="alpha in another workspace",
+                    vector_id="other-vector",
+                ),
+            ]
+        )
+        self.db.commit()
+        vector_store = ChromaVectorStore(
+            provider="database",
+            session_factory=self.SessionLocal,
+            database_embeddings=KeywordEmbeddings(),
+        )
+
+        matches = vector_store.query_workspace(
+            workspace_id=workspace_a.id,
+            query_embedding=[1.0, 0.0],
+            top_k=1,
+        )
+
+        self.assertEqual([match["vector_id"] for match in matches], ["alpha-vector"])
+        self.assertEqual(matches[0]["metadata"]["document_id"], alpha_doc.id)
 
     def test_comparison_requires_completed_documents_in_selected_workspace(self):
         workspace = self.create_workspace()

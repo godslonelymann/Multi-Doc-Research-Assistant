@@ -7,6 +7,7 @@ class Settings(BaseSettings):
     app_env: str = "local"
     debug: bool = True
     database_url: str = "sqlite:///./research_assistant.db"
+    postgres_url: str | None = None
     client_origin: str = "http://localhost:5173"
     groq_api_key: str = ""
     groq_base_url: str = "https://api.groq.com"
@@ -17,6 +18,7 @@ class Settings(BaseSettings):
     chroma_persist_dir: str = "./chroma_db"
     chroma_collection_name: str = "research_documents"
     upload_dir: str = "./uploads"
+    retain_upload_files: bool = True
     max_upload_size_mb: int = 50
     embedding_provider: str = "sentence_transformers"
     embedding_model: str = "sentence-transformers/all-MiniLM-L6-v2"
@@ -38,6 +40,14 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def apply_vercel_defaults(self) -> "Settings":
+        if self.database_url == "sqlite:///./research_assistant.db" and self.postgres_url:
+            self.database_url = self.postgres_url
+
+        if self.database_url.startswith("postgres://"):
+            self.database_url = self.database_url.replace("postgres://", "postgresql+psycopg://", 1)
+        elif self.database_url.startswith("postgresql://"):
+            self.database_url = self.database_url.replace("postgresql://", "postgresql+psycopg://", 1)
+
         if not self.vercel:
             return self
 
@@ -48,7 +58,9 @@ class Settings(BaseSettings):
         if self.upload_dir == "./uploads":
             self.upload_dir = "/tmp/uploads"
         if self.vector_store_provider == "chroma":
-            self.vector_store_provider = "sqlite"
+            self.vector_store_provider = "database"
+        if self.retain_upload_files is True:
+            self.retain_upload_files = False
         if self.app_env == "local":
             self.app_env = "production"
         if self.debug is True:

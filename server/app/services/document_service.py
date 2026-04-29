@@ -6,6 +6,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 from starlette.concurrency import run_in_threadpool
 
+from app.core.config import settings
 from app.models.document import Document
 from app.models.document_chunk import DocumentChunk
 from app.models.processing_job import ProcessingJob
@@ -78,7 +79,7 @@ class DocumentService:
             raise
 
         self.vector_store.delete_document_vectors(document_id=document_id)
-        if storage_path.exists():
+        if storage_path.exists() and storage_path.is_file():
             storage_path.unlink()
         return True
 
@@ -165,6 +166,7 @@ class DocumentService:
             job.message = f"Ingested {len(chunks)} chunks."
             job.completed_at = datetime.utcnow()
             self.db.commit()
+            await self._cleanup_upload_file(storage_path)
         except Exception as exc:
             self.db.rollback()
             if vectors_added:
@@ -185,9 +187,19 @@ class DocumentService:
             job.message = str(exc)
             job.completed_at = datetime.utcnow()
             self.db.commit()
+            await self._cleanup_upload_file(storage_path)
 
         self.db.refresh(document)
         return document
+
+    async def _cleanup_upload_file(self, storage_path: Path) -> None:
+        if settings.retain_upload_files:
+            return
+        try:
+            if storage_path.exists() and storage_path.is_file():
+                await run_in_threadpool(storage_path.unlink)
+        except OSError:
+            pass
 
     def _detect_file_type(self, filename: str) -> str:
         suffix = Path(filename).suffix.lower().lstrip(".")

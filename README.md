@@ -1,10 +1,10 @@
 # Multi-Document Research Assistant with RAG + Report Generation
 
-A local-only full-stack research assistant for working with multiple PDFs and TXT notes under a shared topic workspace. Users can upload sources, ask questions across all documents, compare selected documents, detect basic conflicts, generate topic summaries, and create structured reports with source citations.
+A local-first full-stack research assistant for working with multiple PDFs and TXT notes under a shared topic workspace. Users can upload sources, ask questions across all documents, compare selected documents, detect basic conflicts, generate topic summaries, and create structured reports with source citations.
 
-Groq is used for text generation. Local development uses `sentence-transformers` for embeddings by default, ChromaDB stores vectors, and SQLite stores metadata. Vercel deployments can switch embeddings to a lightweight built-in hashing provider to keep the serverless bundle small.
+Groq is used for text generation. Local development uses `sentence-transformers` for embeddings by default, ChromaDB stores vectors, and SQLite stores metadata. Vercel deployments use lightweight hashing embeddings and database-backed retrieval so the serverless bundle stays small and parsed document content can persist in hosted Postgres.
 
-This project is intentionally local-first. It does not include Docker, cloud deployment, CI/CD, Kubernetes, or hosting configuration.
+This project is intentionally local-first, but it includes Vercel configuration for one-project and split frontend/backend deployments.
 
 ## Problem Solved
 
@@ -14,12 +14,12 @@ Single-document chat tools are not enough for research workflows where evidence 
 
 - Workspace/topic management
 - Multi-file PDF and TXT upload
-- Local file storage
+- Local file storage for development, temporary upload files on Vercel
 - PDF text extraction with PyMuPDF
 - Text cleaning and configurable chunking
 - Embeddings with local `sentence-transformers` or a built-in serverless fallback
-- ChromaDB vector storage
-- SQLite metadata storage
+- ChromaDB vector storage locally, database-backed retrieval on Vercel
+- SQLite metadata storage locally, hosted Postgres support for deployments
 - Groq-powered text generation
 - Workspace-scoped multi-document RAG chat
 - Source citations with document name, page number, and chunk index where available
@@ -39,7 +39,8 @@ FastAPI API routes
         |
 Service layer
         |
-SQLite metadata + ChromaDB vectors + local uploaded files
+Local: SQLite metadata + ChromaDB vectors + local uploaded files
+Vercel: hosted SQL metadata/chunks + temporary upload files
         |
 local or API embeddings + Groq generation
 ```
@@ -87,6 +88,8 @@ APP_NAME="Multi-Document Research Assistant"
 APP_ENV=local
 DEBUG=true
 DATABASE_URL=sqlite:///./research_assistant.db
+# Optional on Vercel/hosted deploys. Used only when DATABASE_URL is left at the local default.
+POSTGRES_URL=
 CLIENT_ORIGIN=http://localhost:5173
 
 GROQ_API_KEY=
@@ -99,7 +102,9 @@ CHROMA_PERSIST_DIR=./chroma_db
 CHROMA_COLLECTION_NAME=research_documents
 VECTOR_STORE_PROVIDER=chroma
 UPLOAD_DIR=./uploads
+RETAIN_UPLOAD_FILES=true
 MAX_UPLOAD_SIZE_MB=50
+EMBEDDING_PROVIDER=sentence_transformers
 EMBEDDING_MODEL=sentence-transformers/all-MiniLM-L6-v2
 CHUNK_SIZE=1200
 CHUNK_OVERLAP=200
@@ -187,7 +192,7 @@ This repo includes Vercel config for both deployment styles:
 
 See `DEPLOYMENT.md` for exact settings and environment variables.
 
-Important: Vercel Functions only provide durable code, not durable local runtime storage. This app falls back to `/tmp` on Vercel so it can deploy and run, but production use should replace local SQLite, local uploads, and local ChromaDB with hosted services.
+Important: Vercel Functions only provide durable code, not durable local runtime storage. For persistence across deployments and function restarts, set `DATABASE_URL` or `POSTGRES_URL` to hosted Postgres. On Vercel, uploaded files are used temporarily for parsing, while document metadata, parsed chunks, summaries, reports, and chat history live in the database. If no hosted database is configured, the app falls back to `/tmp` SQLite and data can disappear.
 
 ## API Quick Checks
 

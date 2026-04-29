@@ -3,14 +3,25 @@ import math
 import sqlite3
 from pathlib import Path
 
+from sqlalchemy import select
+
 from app.core.config import settings
 
 
 class ChromaVectorStore:
-    def __init__(self, persist_dir: str | None = None, collection_name: str | None = None) -> None:
-        self.provider = settings.vector_store_provider
+    def __init__(
+        self,
+        persist_dir: str | None = None,
+        collection_name: str | None = None,
+        provider: str | None = None,
+        session_factory=None,
+        database_embeddings=None,
+    ) -> None:
+        self.provider = provider or settings.vector_store_provider
         self.persist_dir = persist_dir or settings.chroma_persist_dir
         self.collection_name = collection_name or settings.chroma_collection_name
+        self.session_factory = session_factory
+        self.database_embeddings = database_embeddings
         self._client = None
         self._collection = None
 
@@ -44,12 +55,16 @@ class ChromaVectorStore:
     ) -> None:
         if not ids:
             return
+        if self.provider == "database":
+            return
         if self.provider == "sqlite":
             self._sqlite_add_chunks(ids=ids, texts=texts, embeddings=embeddings, metadatas=metadatas)
             return
         self.collection.add(ids=ids, documents=texts, embeddings=embeddings, metadatas=metadatas)
 
     def delete_document_vectors(self, document_id: int) -> None:
+        if self.provider == "database":
+            return
         if self.provider == "sqlite":
             self._sqlite_delete_document_vectors(document_id=document_id)
             return
@@ -61,6 +76,13 @@ class ChromaVectorStore:
         query_embedding: list[float],
         top_k: int,
     ) -> list[dict]:
+        if self.provider == "database":
+            return self._database_query(
+                workspace_id=workspace_id,
+                document_id=None,
+                query_embedding=query_embedding,
+                top_k=top_k,
+            )
         if self.provider == "sqlite":
             return self._sqlite_query(
                 workspace_id=workspace_id,
@@ -85,6 +107,13 @@ class ChromaVectorStore:
         query_embedding: list[float],
         top_k: int,
     ) -> list[dict]:
+        if self.provider == "database":
+            return self._database_query(
+                workspace_id=workspace_id,
+                document_id=document_id,
+                query_embedding=query_embedding,
+                top_k=top_k,
+            )
         if self.provider == "sqlite":
             return self._sqlite_query(
                 workspace_id=workspace_id,
@@ -118,6 +147,64 @@ class ChromaVectorStore:
                 }
             )
         return matches
+
+    def _database_query(
+        self,
+        workspace_id: int,
+        document_id: int | None,
+        query_embedding: list[float],
+        top_k: int,
+    ) -> list[dict]:
+        from app.models.document import Document
+        from app.models.document_chunk import DocumentChunk
+        from app.vectorstore.embeddings import EmbeddingService
+
+        statement = (
+            select(DocumentChunk, Document)
+            .join(Document, DocumentChunk.document_id == Document.id)
+            .where(Document.workspace_id == workspace_id)
+            .where(Document.upload_status == "completed")
+        )
+        if document_id is not None:
+            statement = statement.where(Document.id == document_id)
+
+        if self.session_factory is None:
+            from app.db.session import SessionLocal
+
+            session_factory = SessionLocal
+        else:
+            session_factory = self.session_factory
+
+        with session_factory() as session:
+            rows = session.execute(statement).all()
+
+        if not rows:
+            return []
+
+        texts = [chunk.content for chunk, _document in rows]
+        embedding_service = self.database_embeddings or EmbeddingService()
+        embeddings = embedding_service.embed_texts(texts)
+
+        matches = []
+        for (chunk, document), embedding in zip(rows, embeddings, strict=True):
+            similarity = self._cosine_similarity(query_embedding, embedding)
+            matches.append(
+                {
+                    "vector_id": chunk.vector_id or f"doc-{document.id}-chunk-{chunk.chunk_index}",
+                    "text": chunk.content,
+                    "metadata": {
+                        "document_id": document.id,
+                        "workspace_id": document.workspace_id or 0,
+                        "chunk_index": chunk.chunk_index,
+                        "page_number": chunk.page_number or 0,
+                        "source_filename": chunk.source_filename or document.original_name,
+                        "file_type": document.file_type,
+                    },
+                    "distance": 1 - similarity,
+                }
+            )
+
+        return sorted(matches, key=lambda match: match["distance"])[:top_k]
 
     @property
     def sqlite_path(self) -> Path:

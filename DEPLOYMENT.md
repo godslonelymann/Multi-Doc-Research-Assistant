@@ -23,7 +23,10 @@ Set these environment variables in Vercel:
 ```env
 GROQ_API_KEY=your_groq_key
 CLIENT_ORIGIN=https://your-project.vercel.app
+DATABASE_URL=postgresql://user:password@host:5432/dbname?sslmode=require
 ```
+
+You can also set `POSTGRES_URL` instead of `DATABASE_URL`. The app uses `POSTGRES_URL` when `DATABASE_URL` is left at the local default, which matches Vercel Postgres/Neon-style integrations.
 
 Optional production overrides:
 
@@ -31,9 +34,10 @@ Optional production overrides:
 GROQ_MODEL=llama-3.3-70b-versatile
 GROQ_TEMPERATURE=0.2
 GROQ_TIMEOUT_SECONDS=60
-VECTOR_STORE_PROVIDER=sqlite
+VECTOR_STORE_PROVIDER=database
 EMBEDDING_PROVIDER=hashing
 EMBEDDING_MODEL=local-hashing-384
+RETAIN_UPLOAD_FILES=false
 MAX_UPLOAD_SIZE_MB=50
 ```
 
@@ -57,6 +61,7 @@ Set environment variables:
 ```env
 GROQ_API_KEY=your_groq_key
 CLIENT_ORIGIN=https://your-frontend.vercel.app
+DATABASE_URL=postgresql://user:password@host:5432/dbname?sslmode=require
 ```
 
 Deploy from the CLI if preferred:
@@ -85,13 +90,18 @@ vercel
 vercel --prod
 ```
 
-## Persistence Warning
+## Persistence
 
-Vercel Functions have a read-only deployment filesystem and only `/tmp` is writable at runtime. This project now falls back to `/tmp` automatically on Vercel so it can deploy and run, but `/tmp` is not durable storage.
+Vercel Functions have a read-only deployment filesystem and only `/tmp` is writable at runtime. This project falls back to `/tmp` automatically on Vercel so it can deploy and run without extra services, but `/tmp` is not durable storage.
 
-For a real production app, replace:
+For durable Vercel usage, configure hosted Postgres through `DATABASE_URL` or `POSTGRES_URL`. The app will then persist:
 
-- SQLite with hosted Postgres
-- local uploads with Vercel Blob, S3, or Cloudflare R2
-- local ChromaDB or the Vercel SQLite fallback with hosted Chroma, Pinecone, Qdrant Cloud, or another managed vector database
-- local `sentence-transformers` embeddings with hosted/API embeddings for best retrieval quality. The Vercel config defaults to a lightweight built-in hashing provider so the app can deploy with only `GROQ_API_KEY`.
+- workspaces
+- document metadata
+- parsed document chunks used for retrieval
+- chat sessions and messages
+- summaries and reports
+
+On Vercel, `RETAIN_UPLOAD_FILES` defaults to `false`. Uploaded PDFs/TXT files are written to `/tmp` only long enough to parse them, then the app keeps the parsed chunks in the database. If you need original-file downloads later, add Vercel Blob, S3, or Cloudflare R2 and store those object keys on each document.
+
+The Vercel runtime also defaults `VECTOR_STORE_PROVIDER=database` and `EMBEDDING_PROVIDER=hashing`. Local development keeps `VECTOR_STORE_PROVIDER=chroma` and `EMBEDDING_PROVIDER=sentence_transformers` unless you override them.

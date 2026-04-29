@@ -2,6 +2,11 @@
   "version": 2,
   "buildCommand": "npm --prefix client ci && npm --prefix client run build",
   "outputDirectory": "client/dist",
+  "functions": {
+    "api/index.py": {
+      "excludeFiles": "{client/node_modules/**,client/dist/**,server/tests/**,server/uploads/**,server/chroma_db/**,server/research_assistant.db,server/.venv/**,**/__pycache__/**,**/*.pyc}"
+    }
+  },
   "rewrites": [
     {
       "source": "/api/(.*)",

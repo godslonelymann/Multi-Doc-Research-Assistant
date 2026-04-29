@@ -13,11 +13,6 @@
       }
     }
   ],
-  "functions": {
-    "server/app.py": {
-      "excludeFiles": "{client/node_modules/**,client/dist/**,docs/**,server/tests/**,server/uploads/**,server/chroma_db/**,server/research_assistant.db,server/.venv/**,**/__pycache__/**,**/*.pyc}"
-    }
-  },
   "routes": [
     {
       "src": "/api/(.*)",

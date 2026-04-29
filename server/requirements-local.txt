@@ -1,4 +1,6 @@
 -r requirements.txt
+uvicorn[standard]==0.34.0
+PyMuPDF==1.25.1
 chromadb==0.5.23
 posthog<4
 sentence-transformers==3.3.1

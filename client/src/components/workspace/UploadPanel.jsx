@@ -1,7 +1,12 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
-function UploadPanel({ open, onClose, onUpload, loading }) {
+function UploadPanel({ open, onClose, onUpload, loading, maxUploadSizeMb }) {
   const [files, setFiles] = useState([]);
+  const totalSizeMb = useMemo(
+    () => files.reduce((sum, file) => sum + file.size, 0) / (1024 * 1024),
+    [files],
+  );
+  const tooLarge = files.length > 0 && totalSizeMb > maxUploadSizeMb;
 
   if (!open) {
     return null;
@@ -21,7 +26,9 @@ function UploadPanel({ open, onClose, onUpload, loading }) {
         <div className="flex items-start justify-between gap-4">
           <div>
             <h2 className="text-2xl font-semibold text-[#1d1d1f]">Add sources</h2>
-            <p className="mt-2 text-sm leading-6 text-[#6e6e73]">Upload PDFs or text files. They will be processed and added to this workspace.</p>
+            <p className="mt-2 text-sm leading-6 text-[#6e6e73]">
+              Upload PDFs or text files up to {maxUploadSizeMb} MB total. They will be processed and added to this workspace.
+            </p>
           </div>
           <button type="button" onClick={onClose} className="quiet-button">
             Close
@@ -39,9 +46,14 @@ function UploadPanel({ open, onClose, onUpload, loading }) {
         </label>
         <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm text-[#6e6e73]">
-            {files.length ? `${files.length} file${files.length === 1 ? "" : "s"} selected` : "No files selected"}
+            {files.length
+              ? `${files.length} file${files.length === 1 ? "" : "s"} selected · ${totalSizeMb.toFixed(1)} MB`
+              : "No files selected"}
           </p>
-          <button type="submit" disabled={!files.length || loading} className="primary-button">
+          {tooLarge ? (
+            <p className="text-sm font-medium text-[#ff3b30]">Select files totaling {maxUploadSizeMb} MB or less.</p>
+          ) : null}
+          <button type="submit" disabled={!files.length || loading || tooLarge} className="primary-button">
             {loading ? "Uploading..." : "Upload"}
           </button>
         </div>

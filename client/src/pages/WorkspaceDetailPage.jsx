@@ -13,7 +13,7 @@ import WorkspaceHeader from "../components/workspace/WorkspaceHeader.jsx";
 import { getErrorMessage } from "../lib/errors.js";
 import { askQuestion } from "../services/chatService.js";
 import { compareDocuments } from "../services/comparisonService.js";
-import { deleteDocument, listDocuments, uploadDocuments } from "../services/documentService.js";
+import { deleteDocument, listDocuments, maxUploadSizeMb, uploadDocuments } from "../services/documentService.js";
 import { generateReport } from "../services/reportService.js";
 import { generateSummary } from "../services/summaryService.js";
 import { getWorkspace } from "../services/workspaceService.js";
@@ -285,7 +285,13 @@ function WorkspaceDetailPage({ initialMode = "ask" }) {
         </main>
       </div>
 
-      <UploadPanel open={uploadOpen} onClose={() => setUploadOpen(false)} onUpload={handleUpload} loading={uploading} />
+      <UploadPanel
+        open={uploadOpen}
+        onClose={() => setUploadOpen(false)}
+        onUpload={handleUpload}
+        loading={uploading}
+        maxUploadSizeMb={maxUploadSizeMb}
+      />
     </div>
   );
 }

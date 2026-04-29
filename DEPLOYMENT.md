@@ -38,7 +38,8 @@ VECTOR_STORE_PROVIDER=database
 EMBEDDING_PROVIDER=hashing
 EMBEDDING_MODEL=local-hashing-384
 RETAIN_UPLOAD_FILES=false
-MAX_UPLOAD_SIZE_MB=50
+MAX_UPLOAD_SIZE_MB=4
+VITE_MAX_UPLOAD_SIZE_MB=4
 ```
 
 Do not set `VITE_API_BASE_URL` for the one-project setup. The frontend defaults to `/api` in production.
@@ -105,3 +106,9 @@ For durable Vercel usage, configure hosted Postgres through `DATABASE_URL` or `P
 On Vercel, `RETAIN_UPLOAD_FILES` defaults to `false`. Uploaded PDFs/TXT files are written to `/tmp` only long enough to parse them, then the app keeps the parsed chunks in the database. If you need original-file downloads later, add Vercel Blob, S3, or Cloudflare R2 and store those object keys on each document.
 
 The Vercel runtime also defaults `VECTOR_STORE_PROVIDER=database` and `EMBEDDING_PROVIDER=hashing`. Local development keeps `VECTOR_STORE_PROVIDER=chroma` and `EMBEDDING_PROVIDER=sentence_transformers` unless you override them.
+
+## Upload Size On Vercel
+
+Vercel Functions reject request bodies larger than 4.5 MB with `413 FUNCTION_PAYLOAD_TOO_LARGE`. This app uses direct multipart uploads to FastAPI, so deployed uploads should stay under about 4 MB total per request after multipart overhead.
+
+For larger PDFs, add browser direct uploads to Vercel Blob, S3, or Cloudflare R2, then pass the stored object URL/key to a backend ingestion endpoint. Server-side `MAX_UPLOAD_SIZE_MB=50` is only realistic for local development or non-Vercel hosts that allow larger request bodies.

@@ -117,6 +117,7 @@ Frontend: `client/.env`
 
 ```env
 VITE_API_BASE_URL=http://localhost:8000
+VITE_MAX_UPLOAD_SIZE_MB=50
 ```
 
 ## Groq Setup
@@ -193,6 +194,8 @@ This repo includes Vercel config for both deployment styles:
 See `DEPLOYMENT.md` for exact settings and environment variables.
 
 Important: Vercel Functions only provide durable code, not durable local runtime storage. For persistence across deployments and function restarts, set `DATABASE_URL` or `POSTGRES_URL` to hosted Postgres. On Vercel, uploaded files are used temporarily for parsing, while document metadata, parsed chunks, summaries, reports, and chat history live in the database. If no hosted database is configured, the app falls back to `/tmp` SQLite and data can disappear.
+
+Vercel Functions also reject request bodies larger than 4.5 MB. The frontend defaults production uploads to 4 MB total per request to avoid raw `413` errors. For larger PDFs on Vercel, add direct browser uploads to Vercel Blob, S3, or Cloudflare R2 and ingest from the stored object.
 
 ## API Quick Checks
 

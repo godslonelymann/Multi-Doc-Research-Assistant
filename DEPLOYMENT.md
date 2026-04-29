@@ -11,8 +11,8 @@ Import the repository in Vercel and keep the root directory as the repository ro
 
 Vercel uses the root `vercel.json`:
 
-- builds `client/` with Vite
-- exposes FastAPI from `server/app.py`
+- builds `client/` with Vite using `npm --prefix client ci && npm --prefix client run build`
+- exposes FastAPI from `api/index.py`
 - routes `/api/*` to FastAPI
 - routes all other paths to the React app
 

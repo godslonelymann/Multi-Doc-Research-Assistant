@@ -1,33 +1,19 @@
 {
   "version": 2,
-  "builds": [
+  "buildCommand": "npm --prefix client ci && npm --prefix client run build",
+  "outputDirectory": "client/dist",
+  "rewrites": [
     {
-      "src": "server/app.py",
-      "use": "@vercel/python"
+      "source": "/api/(.*)",
+      "destination": "/api/index.py"
     },
     {
-      "src": "client/package.json",
-      "use": "@vercel/static-build",
-      "config": {
-        "distDir": "dist"
-      }
-    }
-  ],
-  "routes": [
-    {
-      "src": "/api/(.*)",
-      "dest": "server/app.py"
+      "source": "/health",
+      "destination": "/api/index.py"
     },
     {
-      "src": "/health",
-      "dest": "server/app.py"
-    },
-    {
-      "handle": "filesystem"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/client/dist/index.html"
+      "source": "/(.*)",
+      "destination": "/index.html"
     }
   ]
 }
